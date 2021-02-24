@@ -69,8 +69,11 @@ module.exports = (function(options_args){
 
   // setup progression variables if they don't exist
   router.use(function(request, response, next){
-      const sess_copy = {...request.session};
-      var sess = Object.assign(request.session, session_defaults,sess_copy);
+      if (request.session[options.name] == undefined){
+        request.session[options.name] = {}
+      }
+      const sess_copy = {...request.session[options.name]};
+      var sess = Object.assign(request.session[options.name], session_defaults,sess_copy);
       // Unserealize dates
       sess.startTime = (sess.startTime)?new Date(sess.startTime):undefined;
       sess.timeElapsed = (sess.timeElapsed)?new Date(sess.timeElapsed):undefined;
@@ -79,7 +82,7 @@ module.exports = (function(options_args){
 
   // This route displays the story content
   router.get('/', function(request, response) {
-      var sess = request.session;
+      var sess = request.session[options.name];
       var itemCodeToLoad = story["sequence"][sess.storyIdx];
       if (!sess.incorrect) {
           if (story[itemCodeToLoad]["item"] == "end") {
@@ -120,7 +123,7 @@ module.exports = (function(options_args){
 
   // This route validates the puzzle input and proceeds accordingly
   router.post('/next', function(request, response) {
-      var sess = request.session;
+      var sess = request.session[options.name];
       var itemCode = request.body.itemCode;
       var selection = request.body.selection;
       var item = story[itemCode]["item"];
@@ -188,7 +191,7 @@ module.exports = (function(options_args){
 
   // This route allows returning to the previous story segment
   router.post('/back', function(request, response) {
-      var sess = request.session;
+      var sess = request.session[options.name];
       sess.storyIdx--; // Reverting to previous story segment
 
       // Capturing playthrough logs for back navigation
@@ -209,13 +212,13 @@ module.exports = (function(options_args){
 
   // This route disables the incorrect-input error mode
   router.get('/retry', function(request, response) {
-      request.session.incorrect = false;
+      request.session[options.name].incorrect = false;
       response.redirect(request.baseUrl + "/");
   });
 
   // This route resets progress
   router.get('/reset', function(request, response) {
-      Object.assign(request.session,session_defaults);
+      Object.assign(request.session[options.name],session_defaults);
       response.redirect(request.baseUrl + "/");
   })
 
